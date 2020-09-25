@@ -196,8 +196,7 @@ public class RingNode implements Runnable {
 
                     case 3:
                         //If has passed the monitor twice an error has occured
-                        if (!monitor ||
-                                (monitor && frame.monitor != true)) {
+                        if (!monitor || (monitor && frame.monitor != true)) {
                             System.out.println("Node " + id + " has received the following message.");
                             System.out.println("Received: " + frame.getMsg());
                             //if(monitor){System.out.println("Data Link Frame has passed the monitor.");}
@@ -206,15 +205,13 @@ public class RingNode implements Runnable {
                                 if (frame.getFrameStatus()) {
                                     System.out.println("Node " + id + " acknowledges their frame reached the destination");
                                     System.out.println("Node " + id + " has released the token");
-                                    makeToken();
+                                    makeToken();    // Token to next Node
                                 } else {
                                     //The message is meant for this node, acknowledge and send it back
-                                    System.out.println("Node " + id + " has received the following message.");
-                                    System.out.println("Received: " + frame.getMsg());
-                                    System.out.println("From: " + packet.getAddress() + ":" + frame.getSource());
                                     frame.swapAddresses();
                                     frame.acknowledge();
                                     sendFrame(frame);
+                                    System.out.println("Node " + id + " has sent ACK.");
                                 }
                             } else {
                                 sendFrame(frame);
