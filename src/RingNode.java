@@ -161,6 +161,7 @@ public class RingNode implements Runnable {
                 ObjectInputStream in = new ObjectInputStream(fis);
                 DataFrame frame = (DataFrame) in.readObject();
 
+
                 switch (checkFrame(frame)) {
                     case 0:
                         if (hasMessageToSend) {
@@ -197,6 +198,8 @@ public class RingNode implements Runnable {
                         //If has passed the monitor twice an error has occured
                         if (!monitor ||
                                 (monitor && frame.monitor != true)) {
+                            System.out.println("Node " + id + " has received the following message.");
+                            System.out.println("Received: " + frame.getMsg());
                             //if(monitor){System.out.println("Data Link Frame has passed the monitor.");}
                             if (frame.getDes() == port) {
                                 //The node has received a confirmation that previous message it sent has been received.
