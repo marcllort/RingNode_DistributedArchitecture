@@ -10,7 +10,7 @@ public class Network {
     private int numNodes = -1;
     private int ports = 8501;
 
-    public void main(String args[]) {
+    public void startNetwork() {
 
         initNetwork();
 
@@ -29,7 +29,7 @@ public class Network {
                     nodes.get(senderid - 1).giveMessageToSend(msg, (nodes.get(receiverid - 1).getSocketPort()));
                     break;
                 case 1:
-                    nodes = addNode(nodes, numNodes, ports);
+                    nodes = addNode(numNodes, ports);
                     numNodes++;
                     ports++;
                     System.out.println(numNodes);
@@ -37,7 +37,7 @@ public class Network {
                 case 2:
                     System.out.println("Please enter the node's id:");
                     int deleteid = Utils.readNonNegativeInt();
-                    deleteNode(deleteid, nodes, numNodes);
+                    deleteNode(deleteid, numNodes);
                     numNodes--;
                     break;
                 case 3:
@@ -60,7 +60,7 @@ public class Network {
         numNodes = Utils.readNonNegativeInt();
 
         ArrayList<Thread> nodesThreads = new ArrayList<Thread>();
-        ArrayList<RingNode> nodes = new ArrayList<RingNode>();
+        nodes = new ArrayList<RingNode>();
         RingNode temp;
         for (int j = 0; j < numNodes; j++) {
             temp = new RingNode(j + 1, ports);
@@ -68,7 +68,7 @@ public class Network {
             ports++;
         }
 
-        initRingConn(nodes, numNodes);
+        initRingConn(numNodes);
         Thread r;
 
         for (int i = 0; i < numNodes; i++) {
@@ -81,7 +81,7 @@ public class Network {
         }
     }
 
-    public ArrayList<RingNode> addNode(ArrayList<RingNode> nodes, int numNodes, int port) {
+    public ArrayList<RingNode> addNode(int numNodes, int port) {
         RingNode lastNode, next, node;
         Thread newNode;
 
@@ -105,13 +105,13 @@ public class Network {
         return nodes;
     }
 
-    public void deleteNode(int nodeid, ArrayList<RingNode> nodes, int numNodes) {
+    public void deleteNode(int nodeid, int numNodes) {
         nodes.get(nodeid - 2).nextNodePort = nodes.get(nodeid - 1).nextNodePort;
         nodes.get(nodeid - 1).switchReceiving();
         nodes.remove(nodeid);
     }
 
-    public void initRingConn(ArrayList<RingNode> nodes, int numNodes) {
+    public void initRingConn(int numNodes) {
         RingNode node = null;
         RingNode nextNode = null;
 
