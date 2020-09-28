@@ -11,14 +11,7 @@ public class DataFrame implements Serializable {
     private static final long serialVersionUID = -7309788301614787772L;
     //true if it is a token frame
     boolean token = false;
-    //true if it is a amp frame
-    boolean amp = false;
-    //true if it is a Claim token frame
-    boolean ct = false;
-    //true if the frame has the token frame
-    boolean hasToken = false;
-    //true if the frame has passed the monitor station
-    boolean monitor = false;
+    boolean isACK = false;
     //true if a frame reached its intended recipient
     boolean frameStatus = false;
     //Destination port of the frame
@@ -26,42 +19,37 @@ public class DataFrame implements Serializable {
     //Source port of the frame
     int source_addr;
     //Message the frame is transmitting (if any)
-    String message;
+    int actualValue;
+
+    public DataFrame(boolean token, boolean isACK, boolean frameStatus, int destination_addr, int source_addr, int actualValue) {
+        this.token = token;
+        this.isACK = isACK;
+        this.frameStatus = frameStatus;
+        this.destination_addr = destination_addr;
+        this.source_addr = source_addr;
+        this.actualValue = actualValue;
+    }
 
     //create either a Token or amp frame
     public DataFrame() {
 
     }
 
-    //create a claim token frame
-    public DataFrame(int source) {
-        ct = true;
-        source_addr = source;
-    }
 
     //create a data frame
-    public DataFrame(int destination, int source, String msg) {
-        this.destination_addr = destination;
+    public DataFrame(int source, int actualValue) {
         this.source_addr = source;
-        this.message = msg;
+        this.actualValue = actualValue;
     }
 
     public void setAsToken() {
         token = true;
     }
 
-    public void setAsAmp() {
-        amp = true;
+    public void setAsNoToken() {
+        token = false;
     }
 
-    //swap the addresses when acknowledging a frame
-    public void swapAddresses() {
-        int temp;
-        temp = destination_addr;
-        destination_addr = source_addr;
-        source_addr = temp;
-
-    }
 
     public boolean getFrameStatus() {
         return frameStatus;
@@ -69,14 +57,6 @@ public class DataFrame implements Serializable {
 
     public void acknowledge() {
         frameStatus = true;
-    }
-
-    public void setTokenBit(boolean con) {
-        hasToken = con;
-    }
-
-    public void setMonitorBit(boolean con) {
-        monitor = con;
     }
 
     public int getDes() {
@@ -87,7 +67,7 @@ public class DataFrame implements Serializable {
         return this.source_addr;
     }
 
-    public String getMsg() {
-        return this.message;
+    public int getActualValue() {
+        return this.actualValue;
     }
 }

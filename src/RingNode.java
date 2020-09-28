@@ -1,12 +1,12 @@
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
+import java.util.ArrayList;
 
 /**
  * An individual node on the token ring network.
@@ -31,14 +31,21 @@ public class RingNode implements Runnable {
     InetAddress address;
     DatagramSocket socket = null;
     int nextNodePort;
-    boolean monitor = false;
     boolean receiving = true;
     boolean hasMessageToSend = false;
-    String message = "";
+    //the value we are going to send
+    int sendingValue;
+    //the value that the node thinks it's the actual one
+    int savedValue;
+    //the value in which the node wants to modify the actualvalue
+    int addingValue;
     int destin;
+    ArrayList<RingNode> nodes;
+    int receiverPort;
 
     RingNode(int id, int port) {
         try {
+            savedValue = 0;
             this.id = id;
             this.port = port;
             socket = new DatagramSocket(port);
@@ -50,24 +57,18 @@ public class RingNode implements Runnable {
         }
     }
 
-    public void setMonitor() {
-        monitor = true;
-    }
-
     public int getSocketPort() {
         return port;
     }
 
-    public void giveMessageToSend(String msg, int destination) {
+    public void changeTotalValue(int addingValue) {
         hasMessageToSend = true;
-        message = msg;
-        destin = destination;
+        this.addingValue = addingValue;
     }
 
-    public void sendMessage() {
-        DataFrame frame = new DataFrame(destin, port, message);
-        frame.setTokenBit(true);
+    public void sendMessage(DataFrame frame) {
         hasMessageToSend = false;
+        frame.setAsNoToken();
         sendFrame(frame);
     }
 
@@ -76,13 +77,6 @@ public class RingNode implements Runnable {
 
         DatagramPacket packet = null;
         byte[] buf = new byte[MAX_BUFFER];
-
-        //set the monitor bit to false if it isn't the monitor otherwise set it to true
-        if (!monitor) {
-            frame.setMonitorBit(false);
-        } else {
-            frame.setMonitorBit(true);
-        }
 
         try {
             ByteArrayOutputStream fis = new ByteArrayOutputStream();
@@ -109,14 +103,10 @@ public class RingNode implements Runnable {
 
     public void makeAmp() {
         DataFrame ampFrame = new DataFrame();
-        ampFrame.setAsAmp();
+        ampFrame.setAsNoToken();
         sendFrame(ampFrame);
     }
 
-    public void makeCt() {
-        DataFrame ctFrame = new DataFrame(port);
-        sendFrame(ctFrame);
-    }
 
     //stop the node from receiving
     public void switchReceiving() {
@@ -130,14 +120,15 @@ public class RingNode implements Runnable {
     }
 
     int checkFrame(DataFrame frame) {
-        if (frame.token == true) {
-            return 0;
-        } else if (frame.amp == true) {
-            return 1;
-        } else if (frame.ct == true) {
+        //The message was sent by itself and it isn't a token
+        if (frame.source_addr == id - 1 && !frame.token){
             return 2;
         }
-        return 3;
+        if (frame.token) {
+            return 0;
+        } else  {
+            return 1;
+        }
     }
 
     public void run() {
@@ -145,15 +136,17 @@ public class RingNode implements Runnable {
         byte[] buffer;
 
         try {
-            if (monitor) {
-                makeToken();
-                makeAmp();
-            }
             System.out.println("Node " + id + " has started");
+            //When we start we create the token from node 1 and pass it
+            if (id == 1){
+                DataFrame frame = new DataFrame();
+                frame.setAsToken();
+                sendMessage(frame);
+            }
             while (receiving) {
                 buffer = new byte[MAX_BUFFER];
                 packet = new DatagramPacket(buffer, buffer.length);
-                socket.setSoTimeout(5000);
+                //socket.setSoTimeout(5000);
                 socket.receive(packet);
                 buffer = packet.getData();
 
@@ -164,41 +157,28 @@ public class RingNode implements Runnable {
 
                 switch (checkFrame(frame)) {
                     case 0:
+                        //I have the token and something to send
                         if (hasMessageToSend) {
-                            sendMessage();
+                            //I update the actual value adding my addingvalue and the value received
+                            sendingValue = frame.actualValue + addingValue;
+                            savedValue = sendingValue;
+                            frame.actualValue = sendingValue;
+                            sendMessage(frame);
                         } else {
+                            //the message has the value updated but it's not for me
+                            savedValue = frame.actualValue;
                             sendFrame(frame);
                         }
                         break;
 
                     case 1:
-                        if (monitor) {
-                            makeAmp();
-                        } else {
+                        //I pass the message with the token
                             sendFrame(frame);
-                        }
                         break;
 
-                    //If the claim token's claim is greater than your own
-                    //let it otherwise replace it
-                    //if it's yours become monitor
-                    //purge ring
                     case 2:
-                        if (frame.getSource() > port) {
-                            sendFrame(frame);
-                        } else if (frame.getSource() == port) {
-                            monitor = true;
-                        } else {
-                            frame.source_addr = port;
-                            sendFrame(frame);
-                        }
-                        break;
-
-                    case 3:
-                        //If has passed the monitor twice an error has occured
-                        if (!monitor || (monitor && frame.monitor != true)) {
-                            System.out.println("Node " + id + " has received the following message.");
-                            System.out.println("Received: " + frame.getMsg());
+                            /*System.out.println("Node " + id + " has received the following message.");
+                            System.out.println("Received: " + frame.getActualValue());
                             //if(monitor){System.out.println("Data Link Frame has passed the monitor.");}
                             if (frame.getDes() == port) {
                                 //The node has received a confirmation that previous message it sent has been received.
@@ -207,27 +187,23 @@ public class RingNode implements Runnable {
                                     System.out.println("Node " + id + " has released the token");
                                     makeToken();    // Token to next Node
                                 } else {
-                                    //The message is meant for this node, acknowledge and send it back
-                                    frame.swapAddresses();
-                                    frame.acknowledge();
-                                    sendFrame(frame);
+                                    //The message is meant for this node, the new value has passed through all nodes
+                                    frame.setAsToken();
                                     System.out.println("Node " + id + " has sent ACK.");
                                 }
                             } else {
                                 sendFrame(frame);
-                            }
-                        } else {
-                            System.out.println("The frame has passed the monitor twice.");
-                            makeToken();
-                        }
+                            }*/
+                        //The message was originaly sent by me so all the nodes have now the correct value
+                        frame.setAsToken();
                         break;
                 }
             }
             //If after 5 seconds nothing has been received, timeout
-            //If the node is the monitor it can reinsert the token
+            //If the node is the first one, creates the token again
         } catch (SocketTimeoutException E) {
             System.out.println("ST: Hit timeout !");
-            if (monitor) {
+            if (id == 1) {
                 makeToken();
             }
             run();

@@ -21,12 +21,10 @@ public class Network {
                 case 0:
                     System.out.println("Please enter the sender's id:");
                     int senderid = Utils.readNonNegativeInt();
-                    System.out.println("Please enter the receiver's id:");
-                    int receiverid = Utils.readNonNegativeInt();
-                    System.out.println("Please enter the message:");
-                    String msg = Utils.readString();
+                    System.out.println("Please enter value you want to add:");
+                    int value = Utils.readInt();
 
-                    nodes.get(senderid - 1).giveMessageToSend(msg, (nodes.get(receiverid - 1).getSocketPort()));
+                    nodes.get(senderid - 1).changeTotalValue(value);
                     break;
                 case 1:
                     nodes = addNode(numNodes, ports);
@@ -114,8 +112,6 @@ public class Network {
     public void initRingConn(int numNodes) {
         RingNode node = null;
         RingNode nextNode = null;
-
-        nodes.get(0).setMonitor();
         node = nodes.get(numNodes - 1);
         nextNode = nodes.get(0);
         node.nextNodePort = nextNode.getSocketPort();
@@ -124,6 +120,7 @@ public class Network {
             nextNode = nodes.get(i);
             node.nextNodePort = nextNode.getSocketPort();
             node = nextNode;
+            node.nodes = nodes;
         }
     }
 
