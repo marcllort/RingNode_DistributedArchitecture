@@ -1,14 +1,8 @@
 import java.io.Serializable;
 
-/**
- * A class which represents a data frame on the
- * token ring network.It is serializable which means I can
- * flatten it and reuse later. This essentially means that the object
- * exists beyond the lifetime of the virtual machine.
- */
 
 public class DataFrame implements Serializable {
-    private static final long serialVersionUID = -7309788301614787772L;
+
     //true if it is a token frame
     boolean token = false;
     boolean isACK = false;
@@ -32,14 +26,6 @@ public class DataFrame implements Serializable {
 
     //create either a Token or amp frame
     public DataFrame() {
-
-    }
-
-
-    //create a data frame
-    public DataFrame(int source, int actualValue) {
-        this.source_addr = source;
-        this.actualValue = actualValue;
     }
 
     public void setAsToken() {
@@ -49,7 +35,6 @@ public class DataFrame implements Serializable {
     public void setAsNoToken() {
         token = false;
     }
-
 
     public boolean getFrameStatus() {
         return frameStatus;

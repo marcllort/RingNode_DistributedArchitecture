@@ -12,7 +12,7 @@ public class Network {
 
     public void startNetwork() {
 
-        initNetwork();
+        initNetwork2();
 
         do {
             option = Utils.printMenu();
@@ -20,22 +20,35 @@ public class Network {
             switch (option) {
                 case 0:
                     System.out.println("Please enter the sender's id:");
-                    int senderid = Utils.readNonNegativeInt();
+                    int senderId = Utils.readNonNegativeInt();
                     System.out.println("Please enter value you want to add:");
                     int value = Utils.readInt();
 
-                    nodes.get(senderid - 1).changeTotalValue(value);
+                    nodes.get(senderId - 1).updateCurrentValue(value);
                     break;
                 case 1:
-                    nodes = addNode(numNodes, ports);
+                    System.out.println("ReadMode or WriteMode? [W/R]");
+                    String mode = Utils.readString();
+
+                    while (mode != "W" && mode != "R") {
+                        System.out.println("Mode unrecognized. ReadMode or WriteMode? [W/R]");
+                        mode = Utils.readString();
+                    }
+
+                    boolean readMode = true;
+                    if (mode == "W") {
+                        readMode = false;
+                    }
+
+                    nodes = addNode(numNodes, ports, readMode);
                     numNodes++;
                     ports++;
                     System.out.println(numNodes);
                     break;
                 case 2:
                     System.out.println("Please enter the node's id:");
-                    int deleteid = Utils.readNonNegativeInt();
-                    deleteNode(deleteid, numNodes);
+                    int deleteId = Utils.readNonNegativeInt();
+                    deleteNode(deleteId);
                     numNodes--;
                     break;
                 case 3:
@@ -61,7 +74,7 @@ public class Network {
         nodes = new ArrayList<RingNode>();
         RingNode temp;
         for (int j = 0; j < numNodes; j++) {
-            temp = new RingNode(j + 1, ports);
+            temp = new RingNode(j + 1, ports, false);
             nodes.add(temp);
             ports++;
         }
@@ -79,12 +92,58 @@ public class Network {
         }
     }
 
-    public ArrayList<RingNode> addNode(int numNodes, int port) {
+    private void initNetwork2() {
+        int write = Utils.printWriteServers();
+        int read = Utils.printReadServers();
+
+
+        // Start first de read servers and then the write servers
+        ArrayList<Thread> nodesThreads = new ArrayList<Thread>();
+        nodes = new ArrayList<RingNode>();
+        RingNode temp;
+        int j = 0;
+        for (j = 0; j < read; j++) {
+            temp = new RingNode(j + 1, ports, true);
+            nodes.add(temp);
+            ports++;
+        }
+        for (j = j; j < read + write; j++) {
+            temp = new RingNode(j + 1, ports, false);
+            nodes.add(temp);
+            ports++;
+        }
+
+        numNodes = read + write;
+
+        initRingConn(numNodes);
+        Thread r;
+
+        for (int i = 0; i < numNodes; i++) {
+            r = new Thread(nodes.get(i));
+            nodesThreads.add(r);
+        }
+
+        System.out.println("Start? [Y/N]");
+        String start = Utils.readString();
+
+        while (!start.equals("Y")) {
+            System.out.println("Error. Start? [Y/N]");
+            start = Utils.readString();
+        }
+
+        // First the read Nodes will start
+        for (int k = 0; k < numNodes; k++) {
+            nodesThreads.get(k).start();
+        }
+
+    }
+
+    public ArrayList<RingNode> addNode(int numNodes, int port, boolean readMode) {
         RingNode lastNode, next, node;
         Thread newNode;
 
         lastNode = nodes.get(numNodes - 1);
-        next = new RingNode(lastNode.id + 1, port);
+        next = new RingNode(lastNode.id + 1, port, readMode);
         next.nextNodePort = lastNode.nextNodePort;
         lastNode.nextNodePort = next.getSocketPort();
 
@@ -103,7 +162,7 @@ public class Network {
         return nodes;
     }
 
-    public void deleteNode(int nodeid, int numNodes) {
+    public void deleteNode(int nodeid) {
         nodes.get(nodeid - 2).nextNodePort = nodes.get(nodeid - 1).nextNodePort;
         nodes.get(nodeid - 1).switchReceiving();
         nodes.remove(nodeid);

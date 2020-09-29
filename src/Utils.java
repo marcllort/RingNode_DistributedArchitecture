@@ -56,13 +56,26 @@ public class Utils {
         System.out.println("(0) Send a message.");
         System.out.println("(1) Add a node.");
         System.out.println("(2) Delete a node.");
-        System.out.println("(3) Quit.");
-        System.out.println();
+        System.out.println("(3) Quit.\n");
         System.out.println("Please enter menu choice: ");
 
         int option = Utils.readNonNegativeInt();
 
         return option;
+    }
+
+    public static int printWriteServers(){
+        System.out.println("Number of servers in WRITING MODE: ");
+        int number = Utils.readNonNegativeInt();
+
+        return number;
+    }
+
+    public static int printReadServers(){
+        System.out.println("Number of servers in READING MODE: ");
+        int number = Utils.readNonNegativeInt();
+
+        return number;
     }
 
 }
