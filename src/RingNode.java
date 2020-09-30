@@ -6,9 +6,9 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.SocketTimeoutException;
-import java.rmi.server.ExportException;
 import java.util.ArrayList;
 
+import static java.lang.Thread.MIN_PRIORITY;
 import static java.lang.Thread.sleep;
 
 
@@ -16,11 +16,10 @@ public class RingNode implements Runnable {
 
     public static final int MAX_BUFFER = 1024;
 
-    int id;
     int port;
     InetAddress address;
     DatagramSocket socket = null;
-    int nextNodePort;
+
     boolean receiving = true;
     boolean readMode = true;
     boolean hasMessageToSend = false;
@@ -33,10 +32,9 @@ public class RingNode implements Runnable {
     ArrayList<RingNode> nodes;
 
 
-    RingNode(int id, int port, boolean readMode) {
+    RingNode(int port, boolean readMode) {
         try {
             savedValue = 0;
-            this.id = id;
             this.port = port;
             this.readMode = readMode;
             socket = new DatagramSocket(port);
@@ -76,7 +74,7 @@ public class RingNode implements Runnable {
             is.flush();
             byte[] buf = fis.toByteArray();
             address = InetAddress.getByName("127.0.0.1");
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, nextNodePort);
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, nextPortAvaliable());
             socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
@@ -103,7 +101,7 @@ public class RingNode implements Runnable {
 
     int checkFrame(DataFrame frame) {
         //The message was sent by itself and it isn't a token
-        if (frame.source_addr == id - 1 && !frame.token) {
+        if (frame.source_addr == port - 1 && !frame.token) {
             return 2;
         }
         if (frame.token) {
@@ -125,7 +123,6 @@ public class RingNode implements Runnable {
             ByteArrayInputStream fis = new ByteArrayInputStream(buffer);
             ObjectInputStream in = new ObjectInputStream(fis);
             DataFrame frame = (DataFrame) in.readObject();
-
 
             switch (checkFrame(frame)) {
                 case 0:
@@ -150,23 +147,9 @@ public class RingNode implements Runnable {
                     break;
 
                 case 2:
-                    System.out.println("Node " + id + " has received the following message.");
-                    System.out.println("Received: " + frame.getActualValue());/*
-                            //if(monitor){System.out.println("Data Link Frame has passed the monitor.");}
-                            if (frame.getDes() == port) {
-                                //The node has received a confirmation that previous message it sent has been received.
-                                if (frame.getFrameStatus()) {
-                                    System.out.println("Node " + id + " acknowledges their frame reached the destination");
-                                    System.out.println("Node " + id + " has released the token");
-                                    makeToken();    // Token to next Node
-                                } else {
-                                    //The message is meant for this node, the new value has passed through all nodes
-                                    frame.setAsToken();
-                                    System.out.println("Node " + id + " has sent ACK.");
-                                }
-                            } else {
-                                sendFrame(frame);
-                            }*/
+                    System.out.println("Node " + port + " has received the following message.");
+                    System.out.println("Received: " + frame.getActualValue());
+
                     //The message was originally sent by me so all the nodes have now the correct value
                     frame.setAsToken();
                     break;
@@ -174,36 +157,47 @@ public class RingNode implements Runnable {
         }
     }
 
+    public void startNode() {
+        try {
+            while (true) {
+                if (!readMode) {
+                    for (int i = 0; i < 10; i++) {
+                        int value = getCurrentValue();
+                        updateCurrentValue(value + 1);
+
+                        sleep(1000);
+
+                    }
+                } else {
+                    for (int i = 0; i < 10; i++) {
+                        savedValue = getCurrentValue();
+                        sleep(1000);
+                    }
+                }
+            }
+            } catch(InterruptedException e){
+                e.printStackTrace();
+            }
+
+    }
+
     public void run() {
 
         try {
-            System.out.println("Node " + id + " has started");
+            System.out.println("Node " + port + " has started");
             //When we start we create the token from node 1 and pass it
-            if (id == 1) {
+            if (port == Utils.MIN_PORT_NUMBER) {
                 DataFrame frame = new DataFrame();
                 frame.setAsToken();
                 sendMessage(frame);
             }
+            tokenManagement();
 
-            if (!readMode) {
-                for (int i = 0; i < 10; i++) {
-                    int value = getCurrentValue();
-                    updateCurrentValue(value + 1);
-                    tokenManagement();
-                    sleep(1000);
-                }
-            } else {
-                for (int i = 0; i < 10; i++) {
-                    savedValue = getCurrentValue();
-                    tokenManagement();
-                    sleep(1000);
-                }
-            }
 
             //If after 5 seconds nothing has been received, timeout else, if the node is the first one, creates the token again
         } catch (SocketTimeoutException E) {
             System.out.println("ST: Hit timeout !");
-            if (id == 1) {
+            if (port == Utils.MIN_PORT_NUMBER) {
                 makeToken();
             }
             run();
@@ -211,6 +205,14 @@ public class RingNode implements Runnable {
             e.printStackTrace();
             System.exit(-1);
         }
+    }
+
+    public  int nextPortAvaliable(){
+        ArrayList<Integer> ports = Utils.checkPorts();
+        if (ports.size() > port- Utils.MIN_PORT_NUMBER){
+            return ports.get(port- Utils.MIN_PORT_NUMBER +1);
+        }
+        return ports.get(0);
     }
 
 
