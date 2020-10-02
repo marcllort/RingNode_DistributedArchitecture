@@ -4,7 +4,6 @@ import java.io.Serializable;
 public class DataFrame implements Serializable {
 
     //true if it is a token frame
-    boolean token = false;
     boolean isACK = false;
     //true if a frame reached its intended recipient
     boolean frameStatus = false;
@@ -15,8 +14,7 @@ public class DataFrame implements Serializable {
     //Message the frame is transmitting (if any)
     int actualValue;
 
-    public DataFrame(boolean token, boolean isACK, boolean frameStatus, int destination_addr, int source_addr, int actualValue) {
-        this.token = token;
+    public DataFrame( boolean isACK, boolean frameStatus, int destination_addr, int source_addr, int actualValue) {
         this.isACK = isACK;
         this.frameStatus = frameStatus;
         this.destination_addr = destination_addr;
@@ -26,14 +24,6 @@ public class DataFrame implements Serializable {
 
     //create either a Token or amp frame
     public DataFrame() {
-    }
-
-    public void setAsToken() {
-        token = true;
-    }
-
-    public void setAsNoToken() {
-        token = false;
     }
 
     public boolean getFrameStatus() {

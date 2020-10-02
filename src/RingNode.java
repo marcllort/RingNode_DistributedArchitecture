@@ -8,6 +8,7 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
+import static java.lang.Thread.MIN_PRIORITY;
 import static java.lang.Thread.sleep;
 
 
@@ -61,7 +62,6 @@ public class RingNode implements Runnable {
 
     public void sendMessage(DataFrame frame) {
         hasMessageToSend = false;
-        frame.setAsNoToken();
         sendFrame(frame);
     }
 
@@ -83,9 +83,8 @@ public class RingNode implements Runnable {
     }
 
     //Make a new token frame send it on
-    public void makeToken() {
+    public void sendFirst() {
         DataFrame tokenFrame = new DataFrame();
-        tokenFrame.setAsToken();
         sendFrame(tokenFrame);
     }
 
@@ -101,14 +100,11 @@ public class RingNode implements Runnable {
 
     int checkFrame(DataFrame frame) {
         //The message was sent by itself and it isn't a token
-        if (frame.source_addr == port - 1 && !frame.token) {
+        if (frame.source_addr == port - 1) {
             return 2;
         }
-        if (frame.token) {
-            return 0;
-        } else {
-            return 1;
-        }
+        return 1;
+
     }
 
 
@@ -125,9 +121,6 @@ public class RingNode implements Runnable {
             DataFrame frame = (DataFrame) in.readObject();
 
             firstReceived = true;
-
-            switch (checkFrame(frame)) {
-                case 0:
                     //If I have the token and something to send
 
                     if (hasMessageToSend) {
@@ -144,19 +137,6 @@ public class RingNode implements Runnable {
                     }
                     break;
 
-                case 1:
-                    //I pass the message with the token
-                    sendFrame(frame);
-                    break;
-
-                case 2:
-                    System.out.println("Node " + port + " has received the following message.");
-                    System.out.println("Received: " + frame.getActualValue());
-
-                    //The message was originally sent by me so all the nodes have now the correct value
-                    frame.setAsToken();
-                    break;
-            }
         }
     }
 
@@ -166,7 +146,7 @@ public class RingNode implements Runnable {
                 while (firstReceived) {
                     if (!readMode) {
                         for (int i = 0; i < 10; i++) {
-                            int value = getCurrentValue();
+                            int value = getCurrentValue() +1;
                             updateCurrentValue(1);
 
                             sleep(1000);
@@ -203,9 +183,8 @@ public class RingNode implements Runnable {
         } catch (SocketTimeoutException E) {
             System.out.println("ST: Hit timeout !");
             if (port == Utils.MIN_PORT_NUMBER) {
-                makeToken();
+                sendFirst();
             }
-            run();
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(-1);
