@@ -8,7 +8,7 @@ import java.util.List;
 
 public class Utils {
     public static int MIN_PORT_NUMBER = 1000;
-    public static int MAX_PORT_NUMBER = 1100;
+    public static int MAX_PORT_NUMBER = 1020;
 
     private static BufferedReader inputStream =
             new BufferedReader(new InputStreamReader(System.in));
@@ -123,9 +123,8 @@ public class Utils {
     public static ArrayList<Integer> checkPorts(){
         ArrayList<Integer> arrayList = new ArrayList<>();
         for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++){
-            if (Utils.available(i)){
+            if (!Utils.available(i)){
                 arrayList.add(i);
-                break;
             }
         }
         return arrayList;

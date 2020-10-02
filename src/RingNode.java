@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
-import static java.lang.Thread.MIN_PRIORITY;
 import static java.lang.Thread.sleep;
 
 
@@ -23,6 +22,7 @@ public class RingNode implements Runnable {
     boolean receiving = true;
     boolean readMode = true;
     boolean hasMessageToSend = false;
+    boolean firstReceived = false;
     //the value we are going to send
     int sendingValue;
     //the value that the node thinks it's the actual one
@@ -74,7 +74,7 @@ public class RingNode implements Runnable {
             is.flush();
             byte[] buf = fis.toByteArray();
             address = InetAddress.getByName("127.0.0.1");
-            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, nextPortAvaliable());
+            DatagramPacket packet = new DatagramPacket(buf, buf.length, address, nextPortAvailable());
             socket.send(packet);
         } catch (Exception e) {
             e.printStackTrace();
@@ -124,6 +124,9 @@ public class RingNode implements Runnable {
             ObjectInputStream in = new ObjectInputStream(fis);
             DataFrame frame = (DataFrame) in.readObject();
 
+            System.out.println("Frame received:" + frame.actualValue);
+            firstReceived = true;
+
             switch (checkFrame(frame)) {
                 case 0:
                     //If I have the token and something to send
@@ -160,24 +163,26 @@ public class RingNode implements Runnable {
     public void startNode() {
         try {
             while (true) {
-                if (!readMode) {
-                    for (int i = 0; i < 10; i++) {
-                        int value = getCurrentValue();
-                        updateCurrentValue(value + 1);
+                while (firstReceived) {
+                    if (!readMode) {
+                        for (int i = 0; i < 10; i++) {
+                            int value = getCurrentValue();
+                            updateCurrentValue(value + 1);
 
-                        sleep(1000);
+                            sleep(1000);
 
-                    }
-                } else {
-                    for (int i = 0; i < 10; i++) {
-                        savedValue = getCurrentValue();
-                        sleep(1000);
+                        }
+                    } else {
+                        for (int i = 0; i < 10; i++) {
+                            savedValue = getCurrentValue();
+                            sleep(1000);
+                        }
                     }
                 }
             }
-            } catch(InterruptedException e){
-                e.printStackTrace();
-            }
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
 
     }
 
@@ -186,11 +191,11 @@ public class RingNode implements Runnable {
         try {
             System.out.println("Node " + port + " has started");
             //When we start we create the token from node 1 and pass it
-            if (port == Utils.MIN_PORT_NUMBER) {
+            /*if (port == Utils.MIN_PORT_NUMBER) {
                 DataFrame frame = new DataFrame();
                 frame.setAsToken();
                 sendMessage(frame);
-            }
+            }*/
             tokenManagement();
 
 
@@ -207,10 +212,10 @@ public class RingNode implements Runnable {
         }
     }
 
-    public  int nextPortAvaliable(){
+    public int nextPortAvailable() {
         ArrayList<Integer> ports = Utils.checkPorts();
-        if (ports.size() > port- Utils.MIN_PORT_NUMBER){
-            return ports.get(port- Utils.MIN_PORT_NUMBER +1);
+        if (ports.size() > port - Utils.MIN_PORT_NUMBER + 1) {
+            return ports.get(port - Utils.MIN_PORT_NUMBER + 1);
         }
         return ports.get(0);
     }
