@@ -124,7 +124,6 @@ public class RingNode implements Runnable {
             ObjectInputStream in = new ObjectInputStream(fis);
             DataFrame frame = (DataFrame) in.readObject();
 
-            System.out.println("Frame received:" + frame.actualValue);
             firstReceived = true;
 
             switch (checkFrame(frame)) {
@@ -137,8 +136,9 @@ public class RingNode implements Runnable {
                         savedValue = sendingValue;
                         frame.actualValue = sendingValue;
                         sendMessage(frame);
+                        System.out.println("Sending value:"+frame.actualValue);
                     } else {
-                        //the message has the value updated but it's not for me
+                        System.out.println("Saving value:"+frame.actualValue);
                         savedValue = frame.actualValue;
                         sendFrame(frame);
                     }
@@ -167,7 +167,7 @@ public class RingNode implements Runnable {
                     if (!readMode) {
                         for (int i = 0; i < 10; i++) {
                             int value = getCurrentValue();
-                            updateCurrentValue(value + 1);
+                            updateCurrentValue(1);
 
                             sleep(1000);
 
