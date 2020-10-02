@@ -22,14 +22,14 @@ public class RingNode implements Runnable {
 
     boolean receiving = true;
     boolean readMode = true;
-    boolean hasMessageToSend = false;
+    volatile boolean hasMessageToSend = false;
     boolean firstReceived = false;
     //the value we are going to send
-    int sendingValue;
+    volatile int sendingValue;
     //the value that the node thinks it's the actual one
-    int savedValue;
+    volatile int savedValue;
     //the value in which the node wants to modify the actualvalue
-    int addingValue;
+    volatile int addingValue;
     ArrayList<RingNode> nodes;
 
 
@@ -54,10 +54,12 @@ public class RingNode implements Runnable {
     private int getCurrentValue() {
         return savedValue;
     }
-
-    public void updateCurrentValue(int addingValue) {
+    public  void  closeNode(){
+        socket.close();
+    }
+    public void updateCurrentValue(int add) {
         hasMessageToSend = true;
-        this.addingValue = addingValue;
+        this.addingValue = add + addingValue;
     }
 
     public void sendMessage(DataFrame frame) {
@@ -98,18 +100,10 @@ public class RingNode implements Runnable {
         }
     }
 
-    int checkFrame(DataFrame frame) {
-        //The message was sent by itself and it isn't a token
-        if (frame.source_addr == port - 1) {
-            return 2;
-        }
-        return 1;
-
-    }
 
 
     private void tokenManagement() throws Exception {
-        while (receiving) {
+        while (1 == 1) {
             byte[] buffer = new byte[MAX_BUFFER];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
@@ -121,7 +115,6 @@ public class RingNode implements Runnable {
             DataFrame frame = (DataFrame) in.readObject();
 
             firstReceived = true;
-                    //If I have the token and something to send
 
                     if (hasMessageToSend) {
                         //I update the actual value adding my addingvalue and the value received
@@ -135,7 +128,6 @@ public class RingNode implements Runnable {
                         savedValue = frame.actualValue;
                         sendFrame(frame);
                     }
-                    break;
 
         }
     }
@@ -146,7 +138,7 @@ public class RingNode implements Runnable {
                 while (firstReceived) {
                     if (!readMode) {
                         for (int i = 0; i < 10; i++) {
-                            int value = getCurrentValue() +1;
+                            int value = getCurrentValue();
                             updateCurrentValue(1);
 
                             sleep(1000);

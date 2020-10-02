@@ -23,6 +23,7 @@ public class Main {
         if (mode == 3){
             RingNode node = new RingNode(999,readMode);
             node.sendFirst();
+            node.closeNode();
 
         }else{
             //Fer arp, amb aixo sabem quins port hi ha oberts i quants, aixi obrim el seguent port i
