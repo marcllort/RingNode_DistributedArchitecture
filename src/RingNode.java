@@ -23,7 +23,8 @@ public class RingNode implements Runnable {
     boolean receiving = true;
     boolean readMode = true;
     volatile boolean hasMessageToSend = false;
-    boolean firstReceived = false;
+    volatile boolean firstReceived = false;
+    boolean started = true;
     //the value we are going to send
     volatile int sendingValue;
     //the value that the node thinks it's the actual one
@@ -54,12 +55,14 @@ public class RingNode implements Runnable {
     private int getCurrentValue() {
         return savedValue;
     }
-    public  void  closeNode(){
+
+    public void closeNode() {
         socket.close();
     }
+
     public void updateCurrentValue(int add) {
         hasMessageToSend = true;
-        this.addingValue = add + addingValue;
+        this.addingValue = add;
     }
 
     public void sendMessage(DataFrame frame) {
@@ -101,7 +104,6 @@ public class RingNode implements Runnable {
     }
 
 
-
     private void tokenManagement() throws Exception {
         while (1 == 1) {
             byte[] buffer = new byte[MAX_BUFFER];
@@ -116,25 +118,29 @@ public class RingNode implements Runnable {
 
             firstReceived = true;
 
-                    if (hasMessageToSend) {
-                        //I update the actual value adding my addingvalue and the value received
-                        sendingValue = frame.actualValue + addingValue;
-                        savedValue = sendingValue;
-                        frame.actualValue = sendingValue;
-                        sendMessage(frame);
-                        System.out.println("Sending value:"+frame.actualValue);
-                    } else {
-                        System.out.println("Saving value:"+frame.actualValue);
-                        savedValue = frame.actualValue;
-                        sendFrame(frame);
-                    }
+            if (hasMessageToSend) {
+                //I update the actual value adding my addingvalue and the value received
+                sendingValue = frame.actualValue + this.addingValue;
+                savedValue = sendingValue;
+                frame.actualValue = sendingValue;
+                sendMessage(frame);
+                System.out.println("Sending value:" + frame.actualValue);
+            } else {
+                if (frame.actualValue != savedValue) {
+                    System.out.println("Saving value:" + frame.actualValue);
+                    savedValue = frame.actualValue;
+                }
+
+                sendMessage(frame);
+
+            }
 
         }
     }
 
     public void startNode() {
         try {
-            while (true) {
+            while (started) {
                 while (firstReceived) {
                     if (!readMode) {
                         for (int i = 0; i < 10; i++) {
@@ -142,13 +148,18 @@ public class RingNode implements Runnable {
                             updateCurrentValue(1);
 
                             sleep(1000);
-
                         }
+                        started = false;
+                        firstReceived = false;
+                        System.out.println("Finished sending");
                     } else {
                         for (int i = 0; i < 10; i++) {
                             savedValue = getCurrentValue();
                             sleep(1000);
                         }
+                        started = false;
+                        firstReceived = false;
+                        System.out.println("Finished receiving");
                     }
                 }
             }
