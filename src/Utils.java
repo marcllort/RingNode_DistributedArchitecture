@@ -43,46 +43,6 @@ public class Utils {
         return readInt;
     }
 
-    public static String readString() {
-        String line = "";
-        while (true) {
-            try {
-                line = inputStream.readLine();
-                break;
-            } catch (IOException e) {
-                System.err.println("Unexpected IO ERROR: " + e);
-                System.exit(1);
-            }
-        }
-        return line;
-    }
-
-    public static int printMenu(){
-        System.out.println("Menu:");
-        System.out.println("(0) Send a message.");
-        System.out.println("(1) Add a node.");
-        System.out.println("(2) Delete a node.");
-        System.out.println("(3) Quit.\n");
-        System.out.println("Please enter menu choice: ");
-
-        int option = Utils.readNonNegativeInt();
-
-        return option;
-    }
-
-    public static int printWriteServers(){
-        System.out.println("Number of servers in WRITING MODE: ");
-        int number = Utils.readNonNegativeInt();
-
-        return number;
-    }
-
-    public static int printReadServers(){
-        System.out.println("Number of servers in READING MODE: ");
-        int number = Utils.readNonNegativeInt();
-
-        return number;
-    }
 
     /**
      * Checks to see if a specific port is available.

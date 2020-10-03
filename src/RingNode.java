@@ -19,8 +19,6 @@ public class RingNode implements Runnable {
     int port;
     InetAddress address;
     DatagramSocket socket = null;
-
-    boolean receiving = true;
     boolean readMode = true;
     volatile boolean hasMessageToSend = false;
     volatile boolean firstReceived = false;
@@ -31,7 +29,6 @@ public class RingNode implements Runnable {
     volatile int savedValue;
     //the value in which the node wants to modify the actualvalue
     volatile int addingValue;
-    ArrayList<RingNode> nodes;
 
 
     RingNode(int port, boolean readMode) {
@@ -48,9 +45,6 @@ public class RingNode implements Runnable {
         }
     }
 
-    public int getSocketPort() {
-        return port;
-    }
 
     private int getCurrentValue() {
         return savedValue;
@@ -93,16 +87,6 @@ public class RingNode implements Runnable {
         sendFrame(tokenFrame);
     }
 
-    //stop the node from receiving
-    public void switchReceiving() {
-        try {
-            receiving = !receiving;
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(-1);
-        }
-    }
-
 
     private void tokenManagement() throws Exception {
         while (1 == 1) {
@@ -130,11 +114,8 @@ public class RingNode implements Runnable {
                     System.out.println("Saving value:" + frame.actualValue);
                     savedValue = frame.actualValue;
                 }
-
                 sendMessage(frame);
-
             }
-
         }
     }
 
@@ -173,14 +154,7 @@ public class RingNode implements Runnable {
 
         try {
             System.out.println("Node " + port + " has started");
-            //When we start we create the token from node 1 and pass it
-            /*if (port == Utils.MIN_PORT_NUMBER) {
-                DataFrame frame = new DataFrame();
-                frame.setAsToken();
-                sendMessage(frame);
-            }*/
             tokenManagement();
-
 
             //If after 5 seconds nothing has been received, timeout else, if the node is the first one, creates the token again
         } catch (SocketTimeoutException E) {
@@ -201,6 +175,4 @@ public class RingNode implements Runnable {
         }
         return ports.get(0);
     }
-
-
 }

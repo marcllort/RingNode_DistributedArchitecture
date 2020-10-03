@@ -36,7 +36,6 @@ public class Main {
 
             node.startNode();
 
-
         }
 
 
