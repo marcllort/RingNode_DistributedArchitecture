@@ -125,11 +125,11 @@ public class RingNode implements Runnable {
                 while (firstReceived) {
                     if (!readMode) {
                         for (int i = 0; i < 10; i++) {
-                            int value = getCurrentValue();
+                            getCurrentValue();
                             updateCurrentValue(1);
-
                             sleep(1000);
                         }
+
                         started = false;
                         firstReceived = false;
                         System.out.println("Finished sending");
@@ -138,6 +138,7 @@ public class RingNode implements Runnable {
                             savedValue = getCurrentValue();
                             sleep(1000);
                         }
+
                         started = false;
                         firstReceived = false;
                         System.out.println("Finished receiving");
