@@ -80,6 +80,10 @@ public class Utils {
         return false;
     }
 
+    /**
+     * Checks the ports avaliable between the range of ports defined
+     * @return array of avaliable ports
+     */
     public static ArrayList<Integer> checkPorts(){
         ArrayList<Integer> arrayList = new ArrayList<>();
         for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++){
@@ -90,6 +94,10 @@ public class Utils {
         return arrayList;
     }
 
+    /**
+     * Returns the number of the first avaliable port
+     * @return port number
+     */
     public static int firstPortAvaliable(){
         for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++){
             if (Utils.available(i)){

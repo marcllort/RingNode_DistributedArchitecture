@@ -169,6 +169,10 @@ public class RingNode implements Runnable {
         }
     }
 
+    /**
+     * returns the next port that is open after its own port, if it's the last one opened, it returns the first port
+     * @return port number
+     */
     public int nextPortAvailable() {
         ArrayList<Integer> ports = Utils.checkPorts();
         if (ports.size() > port - Utils.MIN_PORT_NUMBER + 1) {
