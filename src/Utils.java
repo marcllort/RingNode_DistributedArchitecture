@@ -4,9 +4,9 @@ import java.io.InputStreamReader;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
 import java.util.ArrayList;
-import java.util.List;
 
 public class Utils {
+
     public static int MIN_PORT_NUMBER = 1000;
     public static int MAX_PORT_NUMBER = 1020;
 
@@ -43,12 +43,6 @@ public class Utils {
         return readInt;
     }
 
-
-    /**
-     * Checks to see if a specific port is available.
-     *
-     * @param port the port to check for availability
-     */
     public static boolean available(int port) {
         if (port < MIN_PORT_NUMBER || port > MAX_PORT_NUMBER) {
             throw new IllegalArgumentException("Invalid start port: " + port);
@@ -84,10 +78,10 @@ public class Utils {
      * Checks the ports avaliable between the range of ports defined
      * @return array of avaliable ports
      */
-    public static ArrayList<Integer> checkPorts(){
+    public static ArrayList<Integer> checkPorts() {
         ArrayList<Integer> arrayList = new ArrayList<>();
-        for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++){
-            if (!Utils.available(i)){
+        for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++) {
+            if (!Utils.available(i)) {
                 arrayList.add(i);
             }
         }
@@ -98,9 +92,9 @@ public class Utils {
      * Returns the number of the first avaliable port
      * @return port number
      */
-    public static int firstPortAvaliable(){
-        for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++){
-            if (Utils.available(i)){
+    public static int firstPortAvaliable() {
+        for (int i = MIN_PORT_NUMBER; i < MAX_PORT_NUMBER; i++) {
+            if (Utils.available(i)) {
                 return i;
             }
         }

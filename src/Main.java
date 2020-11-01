@@ -21,27 +21,25 @@ public class Main {
         }
 
         if (mode == 1) readMode = true;
+
         if (mode == 3) {
+            // Enviem Token (al primer port, 1000)
             RingNode node = new RingNode(999, readMode);
             node.sendFirst();
             node.closeNode();
 
         } else {
-            //Fer arp, amb aixo sabem quins port hi ha oberts i quants, aixi obrim el seguent port i
+            //Fer arp, amb aixo sabem quins port hi ha oberts i quants, aixi obrim el seguent port
             int port = Utils.firstPortAvaliable();
             RingNode node = new RingNode(port, readMode);
-            System.out.println(port);
-            //Primer esperar a introduir el token
+            System.out.println("PORT: " + port);
 
             Thread thread = new Thread(node);
             thread.start();
 
             node.startNode();
-
         }
 
-
     }
-
 
 }

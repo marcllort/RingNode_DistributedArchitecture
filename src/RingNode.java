@@ -8,7 +8,6 @@ import java.net.InetAddress;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 
-import static java.lang.Thread.MIN_PRIORITY;
 import static java.lang.Thread.sleep;
 
 
@@ -44,7 +43,6 @@ public class RingNode implements Runnable {
             System.exit(-1);
         }
     }
-
 
     private int getCurrentValue() {
         return savedValue;
@@ -87,12 +85,12 @@ public class RingNode implements Runnable {
         sendFrame(tokenFrame);
     }
 
-
     private void tokenManagement() throws Exception {
-        while (1 == 1) {
+        while (true) {
             byte[] buffer = new byte[MAX_BUFFER];
             DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
 
+            // receive and read packet
             socket.receive(packet);
             buffer = packet.getData();
 
@@ -152,12 +150,11 @@ public class RingNode implements Runnable {
     }
 
     public void run() {
-
         try {
             System.out.println("Node " + port + " has started");
             tokenManagement();
 
-            //If after 5 seconds nothing has been received, timeout else, if the node is the first one, creates the token again
+            //If after 5 seconds nothing has been received, timeout. If the node is the first one, creates the token again
         } catch (SocketTimeoutException E) {
             System.out.println("ST: Hit timeout !");
             if (port == Utils.MIN_PORT_NUMBER) {
@@ -169,10 +166,7 @@ public class RingNode implements Runnable {
         }
     }
 
-    /**
-     * returns the next port that is open after its own port, if it's the last one opened, it returns the first port
-     * @return port number
-     */
+    //returns the next port that is open after its own port, if it's the last one opened, it returns the first port
     public int nextPortAvailable() {
         ArrayList<Integer> ports = Utils.checkPorts();
         if (ports.size() > port - Utils.MIN_PORT_NUMBER + 1) {
